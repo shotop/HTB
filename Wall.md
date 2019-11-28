@@ -3,17 +3,17 @@ nmap -sC -sV -oA wall 10.10.10.157
 
 
 
-Run dirb:
+h2 Run dirb:
 enumerate .php files
 dirb http://10.10.10.157/ -x .php 
 
 basic enumeration with common word list
-dirb http://10.10.10.157/
-
+`dirb http://10.10.10.157/`
+```
 ---- Scanning URL: http://10.10.10.157/ ----
 + http://10.10.10.157/index.html (CODE:200|SIZE:10918)                                                                        
 + http://10.10.10.157/monitoring (CODE:401|SIZE:459)  
-
+```
 
 
 
