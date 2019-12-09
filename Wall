@@ -72,9 +72,9 @@ Saved the above reverse shell script as a misc command in Centreon.  Applied tha
 
 Jumped to page 60602 in centreon per advice from reddit thread. 
 
+On page 60602, you can test various actions that occur post polling, inluding running Misc scripts.  I executed a test to get the reverse shell above in the misc script i created above to fire, which it did. 
 
-
-
+Once I had the shell, I wanted to stabalize it.  It was super janky at first. 
 
 Stabalized reverse shell:
 on victim
