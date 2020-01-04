@@ -151,14 +151,3 @@ uid=0(root) gid=0(root) groups=0(root),33(www-data),6000(centreon)
 
 
 From here I was able to get access to the user/shelby directory to get the user.txt file as well /root to get the root flag. 
-
-
-
-
-
-
-
-
-
-
-
