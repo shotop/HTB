@@ -76,11 +76,13 @@ redis@Postman:~$
 ```
 ## Foothold on the Box
 
+SimpleHttpServer to get linenum onto the box
+
 
 
 ## searching for .bak files
 ```
-redis@Postman:/$ find / -type f -iname "*.bak"
+redis@Postman:/$ find / -type f -iname "*.bak" 2>/dev/null
 ```
 
 ```
