@@ -1,18 +1,4 @@
 ## nmap
-
-```
-root@kali:~/Pentesting/HackTheBox/Boxes/Postman# nmap -p- 10.10.10.160
-Starting Nmap 7.80 ( https://nmap.org ) at 2020-01-19 17:16 EST
-Nmap scan report for 10.10.10.160
-Host is up (0.046s latency).
-Not shown: 65531 closed ports
-PORT      STATE SERVICE
-22/tcp    open  ssh
-80/tcp    open  http
-6379/tcp  open  redis
-10000/tcp open  snet-sensor-mgmt
-```
-
 ```
 root@kali:~/Pentesting/HackTheBox/Boxes/Postman# nmap -sC -sV -oA postman 10.10.10.160
 Starting Nmap 7.80 ( https://nmap.org ) at 2020-01-19 17:13 EST
@@ -36,7 +22,25 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 37.89 seconds
 ```
 
+Initial nmap didn't yield the open redis port, which was important!  Send me down a few dead end paths before running the following more comprehensive nmap:
+
+```
+root@kali:~/Pentesting/HackTheBox/Boxes/Postman# nmap -p- 10.10.10.160
+Starting Nmap 7.80 ( https://nmap.org ) at 2020-01-19 17:16 EST
+Nmap scan report for 10.10.10.160
+Host is up (0.046s latency).
+Not shown: 65531 closed ports
+PORT      STATE SERVICE
+22/tcp    open  ssh
+80/tcp    open  http
+6379/tcp  open  redis
+10000/tcp open  snet-sensor-mgmt
+```
+
 ## ssh crackit on redis server
+
+I used the ssh-crackit technique in the article below to manually create ssh keys and put them in the database on the host through the redis interface.  This then allowed me to ssh into the box as the redis user, getting the initial foothold.
+
 https://book.hacktricks.xyz/pentesting/6379-pentesting-redis
 
 ```
@@ -78,7 +82,30 @@ redis@Postman:~$
 
 SimpleHttpServer to get linenum onto the box
 
+on kali machine: 
+```
+shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ wget https://raw.githubusercontent.com/rebootuser/LinEnum/master/LinEnum.sh
+--2020-03-16 11:35:55--  https://raw.githubusercontent.com/rebootuser/LinEnum/master/LinEnum.sh
+Resolving raw.githubusercontent.com (raw.githubusercontent.com)... 199.232.76.133
+Connecting to raw.githubusercontent.com (raw.githubusercontent.com)|199.232.76.133|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 46631 (46K) [text/plain]
+Saving to: ‘LinEnum.sh’
 
+LinEnum.sh                              100%[==============================================================================>]  45.54K  --.-KB/s    in 0.03s   
+
+2020-03-16 11:35:56 (1.29 MB/s) - ‘LinEnum.sh’ saved [46631/46631]
+
+
+shotop@kali:~/Pentesting/HackTheBox/PublicBoxes/Postman$ python -m SimpleHTTPServer 2222
+Serving HTTP on 0.0.0.0 port 2222 ...
+
+```
+On host:
+
+```
+
+```
 
 ## searching for .bak files
 ```
