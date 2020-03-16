@@ -22,7 +22,7 @@ Service detection performed. Please report any incorrect results at https://nmap
 Nmap done: 1 IP address (1 host up) scanned in 37.89 seconds
 ```
 
-Initial nmap didn't yield the open redis port, which was important!  Send me down a few dead end paths before running the following more comprehensive nmap:
+Initial nmap didn't yield the open redis port, which was important!  Sent me down a few dead end paths before running the following more comprehensive nmap:
 
 ```
 root@kali:~/Pentesting/HackTheBox/Boxes/Postman# nmap -p- 10.10.10.160
