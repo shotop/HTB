@@ -300,5 +300,5 @@ root
 # ls
 nostromo_1.9.6-1.deb  root.txt
 # cat root.txt
-9aa36a6d76f785dfd320a478f6e0d906
+9aa36a6d76f785dfd320a478f6e....
 ```
